@@ -1,0 +1,16 @@
+.btn-custom-outline {
+    border: 1px solid #8da9c4;
+    color: #5a7b9c;
+    background: transparent;
+}
+
+.btn-custom-fill {
+    background-color: #8da9c4;
+    color: white;
+    border: none;
+}
+
+.btn-custom-fill:hover {
+    background-color: #7695b3;
+    color: white;
+}
