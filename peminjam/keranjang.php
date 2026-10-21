@@ -71,9 +71,12 @@ if (isset($_POST['checkout'])) {
         }
 
         if (empty($error)) {
+            // Tentukan status pembayaran otomatis berdasarkan metode pembayaran
+            $status_pembayaran = ($metode_pembayaran === 'QRIS') ? 'Lunas' : 'Belum Bayar';
+
             // 2. SIMPAN KE TABEL PEMINJAMAN UTAMA
             $q_insert = "INSERT INTO peminjaman (id_user, tgl_pinjam, tgl_kembali_rencana, total_biaya, status_pembayaran, status) 
-                         VALUES ('$id_user', '$tgl_pinjam', '$tgl_kembali_rencana', '$subtotal_keseluruhan', 'Belum Bayar', 'menunggu')";
+                         VALUES ('$id_user', '$tgl_pinjam', '$tgl_kembali_rencana', '$subtotal_keseluruhan', '$status_pembayaran', 'menunggu')";
             
             if (mysqli_query($koneksi, $q_insert)) {
                 $id_peminjaman_baru = mysqli_insert_id($koneksi);
@@ -215,8 +218,8 @@ if (isset($_POST['checkout'])) {
                         <div class="mb-3">
                             <label class="form-label small fw-semibold">Metode Pembayaran</label>
                             <select name="metode_pembayaran" class="form-select form-select-sm" required>
-                                <option value="QRIS">QRIS (Scan & Tunjukkan ke Petugas)</option>
-                                <option value="Tunai">Bayar Tunai di Kasir / Petugas</option>
+                                <option value="QRIS">QRIS (Langsung Lunas)</option>
+                                <option value="Tunai">Bayar Tunai / Belum Bayar</option>
                             </select>
                         </div>
 

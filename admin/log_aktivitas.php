@@ -1,10 +1,13 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 include '../koneksi.php';
 /** @var mysqli $koneksi */
 
-// Proteksi halaman khusus admin
-if (!isset($_SESSION['role']) || strtolower($_SESSION['role']) !== 'admin') {
+// Proteksi fleksibel (memeriksa role atau akses)
+$role = strtolower($_SESSION['role'] ?? $_SESSION['akses'] ?? '');
+if (!isset($_SESSION['status']) || $_SESSION['status'] !== 'login' || ($role !== 'admin' && $role !== '1')) {
     echo "<script>alert('Akses ditolak! Halaman ini khusus Administrator.'); window.location='dashboard.php';</script>";
     exit();
 }
@@ -14,20 +17,18 @@ $cari = isset($_GET['cari']) ? mysqli_real_escape_string($koneksi, $_GET['cari']
 $tgl_mulai = isset($_GET['tgl_mulai']) ? $_GET['tgl_mulai'] : '';
 $tgl_selesai = isset($_GET['tgl_selesai']) ? $_GET['tgl_selesai'] : '';
 
-// Base Query
+// Base Query (Menggunakan kolom timestamp sesuai database kamu)
 $query = "SELECT log_aktivitas.*, users.nama_lengkap, users.role 
           FROM log_aktivitas 
           LEFT JOIN users ON log_aktivitas.id_user = users.id_user 
           WHERE 1=1";
 
-// Kondisi Pencarian (Nama Pengguna atau Keterangan Aktivitas)
 if (!empty($cari)) {
     $query .= " AND (users.nama_lengkap LIKE '%$cari%' OR log_aktivitas.aktivitas LIKE '%$cari%')";
 }
 
-// Kondisi Filter Rentang Waktu/Tanggal Log
 if (!empty($tgl_mulai) && !empty($tgl_selesai)) {
-    $query .= " AND DATE(log_aktivitas.waktu) BETWEEN '$tgl_mulai' AND '$tgl_selesai'";
+    $query .= " AND DATE(log_aktivitas.timestamp) BETWEEN '$tgl_mulai' AND '$tgl_selesai'";
 }
 
 $query .= " ORDER BY log_aktivitas.id_log DESC";
@@ -43,7 +44,6 @@ $result = mysqli_query($koneksi, $query);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-    /* Ini wajib ada di setiap halaman utama supaya kontennya tidak nabrak sidebar */
     .main-content {
         margin-left: 260px;
         padding: 30px;
@@ -52,7 +52,7 @@ $result = mysqli_query($koneksi, $query);
     .main-content.expanded {
         margin-left: 0;
     }
-</style>
+    </style>
 </head>
 <body>
 
@@ -141,7 +141,7 @@ $result = mysqli_query($koneksi, $query);
                                 <td>
                                     <span class="text-muted small">
                                         <i class="far fa-clock me-1"></i> 
-                                        <?php echo !empty($row['waktu']) ? date('d-m-Y H:i:s', strtotime($row['waktu'])) : '-'; ?>
+                                        <?php echo !empty($row['timestamp']) ? date('d-m-Y H:i:s', strtotime($row['timestamp'])) : '-'; ?>
                                     </span>
                                 </td>
                             </tr>
@@ -157,25 +157,23 @@ $result = mysqli_query($koneksi, $query);
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const sidebar = document.getElementById('sidebarNav');
+        // Perbaikan script toggle sidebar yang aman dan fleksibel
+        const sidebar = document.querySelector('.sidebar, #sidebarNav, nav'); // Mencari elemen sidebar secara umum
         const mainContent = document.getElementById('mainContent');
         const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebarClose = document.getElementById('sidebarClose');
 
-        if(sidebarToggle) {
-            sidebarToggle.addEventListener('click', () => {
-                sidebar.classList.toggle('hidden');
-                mainContent.classList.toggle('expanded');
-            });
-        }
-        if(sidebarClose) {
-            sidebarClose.addEventListener('click', () => {
-                sidebar.classList.add('hidden');
-                mainContent.classList.add('expanded');
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (sidebar) {
+                    sidebar.classList.toggle('hidden');
+                }
+                if (mainContent) {
+                    mainContent.classList.toggle('expanded');
+                }
             });
         }
     </script>
-</body>
 </html>
